@@ -1,0 +1,11 @@
+version: "3.8"
+services:
+    arst_aws_app:
+        build: .
+        image: arst-aws-app
+        container_name: aws-epam
+        volumes:
+            - $UserProfile\.aws\credentials:/root/.aws/credentials
+            - $UserProfile\.aws\config:/root/.aws/config
+            - $UserProfile\.ssh:/root/.ssh
+            - ./:/app
