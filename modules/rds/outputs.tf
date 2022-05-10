@@ -11,3 +11,6 @@ output "master_pwd" {
   value       = random_password.master_password.result
   sensitive   = true
 }
+output "test" {
+  value = data.aws_subnets.this_subnets.ids
+}

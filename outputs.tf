@@ -84,5 +84,8 @@ output "launch_template" {
 }
 output "repo_url" {
   description = "The URL of the repository"
-  value       = module.ecs.repo_url
+  value       = module.ecr.repo_url
+}
+output "test" {
+  value = concat(module.vpc.public_subnets, module.vpc.private_subnets)
 }

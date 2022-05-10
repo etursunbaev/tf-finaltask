@@ -1,4 +1,5 @@
 locals {
+  iam_iparn = var.instance_profile
   extra_tags = [
     {
       key                 = "Environment"
@@ -22,21 +23,12 @@ locals {
     }
   ]
 }
-data "template_file" "user_data" {
-  template = file("${path.module}/init.sh")
 
-  vars = {
-    db_url_tpl  = var.db_host
-    db_password = var.db_password
-    efs_id      = var.efs_id
-    aws_region  = var.aws_region
-  }
-}
 resource "aws_launch_template" "this_tmpl" {
   name = "ghost"
 
   iam_instance_profile {
-    name = "test"
+    arn = local.iam_iparn
   }
 
   image_id = var.image_id
@@ -56,9 +48,10 @@ resource "aws_launch_template" "this_tmpl" {
 
   network_interfaces {
     associate_public_ip_address = true
+    security_groups = var.security_groups
   }
 
-  vpc_security_group_ids = var.security_groups
+  #vpc_security_group_ids = var.security_groups
 
   tag_specifications {
     resource_type = "instance"
@@ -68,7 +61,7 @@ resource "aws_launch_template" "this_tmpl" {
     }
   }
 
-  user_data = data.template_file.user_data.rendered
+  user_data = var.user_data
 }
 resource "aws_autoscaling_group" "this_asg" {
   name     = "ghost_ec2_pool"

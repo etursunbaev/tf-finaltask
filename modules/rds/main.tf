@@ -6,10 +6,13 @@ data "aws_subnets" "this_subnets" {
     name   = "vpc-id"
     values = [var.vpc_id]
   }
-
-  tags = {
-    Tier = "private_db*"
+  filter {
+    name   = "tag:Name"
+    values = ["private_db_*"] # insert values here
   }
+  # tags = {
+  #   Name = "private_db*"
+  # }
 }
 data "aws_security_groups" "this_sg" {
 
@@ -29,15 +32,17 @@ resource "aws_db_subnet_group" "this_db_subnet" {
 }
 resource "aws_db_instance" "this_db" {
   allocated_storage      = 20
+  identifier = "ghost"
   engine                 = "mysql"
   engine_version         = "8.0"
   instance_class         = "db.t2.micro"
-  db_name                = "ghost"
-  username               = "root"
+  db_name                = "gh_db"
+  username               = "gh_user"
   password               = random_password.master_password.result
   storage_type           = "gp2"
   vpc_security_group_ids = local.db_sg
   db_subnet_group_name   = aws_db_subnet_group.this_db_subnet.name
+  skip_final_snapshot  = true
   tags = merge(var.additional_tags, {
     Name = "ghost"
     },

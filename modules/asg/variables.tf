@@ -47,19 +47,23 @@ variable "security_groups" {
   description = "SG"
   type        = list(any)
 }
-variable "db_host" {
-  description = "DB instance IP address"
-  type        = string
-}
-variable "db_password" {
-  description = "DB user password"
-  type        = string
-}
-variable "efs_id" {
-  description = "EFS ID"
-  type        = string
-}
-variable "aws_region" {
-  description = "AWS region"
-  type        = string
+# variable "db_host" {
+#   description = "DB instance IP address"
+#   type        = string
+# }
+# variable "db_password" {
+#   description = "DB user password"
+#   type        = string
+# }
+# variable "efs_id" {
+#   description = "EFS ID"
+#   type        = string
+# }
+# variable "aws_region" {
+#   description = "AWS region"
+#   type        = string
+# }
+variable "user_data" {
+  description = "User-data template"
+  type = string
 }

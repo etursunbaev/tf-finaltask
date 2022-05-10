@@ -10,7 +10,3 @@ output "task_def_arn" {
   description = "The Task Definition ARN."
   value       = aws_ecs_task_definition.this_task.arn
 }
-output "repo_url" {
-  description = "The URL of the repository"
-  value = aws_ecr_repository.foo.repository_url
-}

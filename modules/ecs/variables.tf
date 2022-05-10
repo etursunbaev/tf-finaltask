@@ -26,3 +26,27 @@ variable "ecs_task_execution_role" {
   type        = string
   default     = ""
 }
+variable "repo_url" {
+  description = "Repository URL"
+  type        = string
+}
+variable "vpc_id" {
+  description = "value"  
+  type = string
+}
+variable "security_groups" {
+  description = "Security group ID"
+  type = string
+}
+variable "subnets" {
+  description = "Subnets"
+  type = list
+}
+variable "efs_id" {
+  description = "EFS ID"
+  type = string
+}
+variable "fargate_pool_arn" {
+  description = "Fargate target"
+  type = string
+}

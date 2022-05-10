@@ -1,6 +1,8 @@
 resource "aws_lb" "this_alb" {
   name               = "ALB"
   load_balancer_type = "application"
+  security_groups    = [var.security_groups]
+  subnets            = var.subnets
   tags = merge(var.additional_tags, {
     Name = "ALB"
     },
@@ -13,6 +15,7 @@ resource "aws_lb_target_group" "this_tg" {
   protocol    = "HTTP"
   port        = 2368
   tags        = var.additional_tags
+  vpc_id      = var.vpc_id
 }
 resource "aws_lb_listener" "this_listener" {
   #count = length(aws_lb_target_group.this_tg.*.id)
@@ -20,12 +23,17 @@ resource "aws_lb_listener" "this_listener" {
   port              = 80
   protocol          = "HTTP"
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.this_tg[0].arn
-  }
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.this_tg[1].arn
+    type = "forward"
+    forward {
+      target_group {
+        arn    = aws_lb_target_group.this_tg[0].arn
+        weight = 50
+      }
+      target_group {
+        arn    = aws_lb_target_group.this_tg[1].arn
+        weight = 50
+      }
+    }
   }
 
 }
