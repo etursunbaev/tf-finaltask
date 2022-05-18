@@ -23,7 +23,18 @@ locals {
     }
   ]
 }
+data "template_file" "user_data" {
+  template = file("${path.module}/init.sh")
 
+  vars = {
+    db_host     = var.db_host
+    db_password = var.db_password
+    efs_id      = var.efs_id
+    aws_region  = var.aws_region
+    db_name     = var.db_name
+    db_user     = var.db_user
+  }
+}
 resource "aws_launch_template" "this_tmpl" {
   name = "ghost"
 
@@ -48,7 +59,7 @@ resource "aws_launch_template" "this_tmpl" {
 
   network_interfaces {
     associate_public_ip_address = true
-    security_groups = var.security_groups
+    security_groups             = var.security_groups
   }
 
   #vpc_security_group_ids = var.security_groups
@@ -61,7 +72,7 @@ resource "aws_launch_template" "this_tmpl" {
     }
   }
 
-  user_data = var.user_data
+  user_data = base64gzip(data.template_file.user_data.rendered)
 }
 resource "aws_autoscaling_group" "this_asg" {
   name     = "ghost_ec2_pool"

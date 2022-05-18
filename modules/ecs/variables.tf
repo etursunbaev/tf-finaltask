@@ -31,22 +31,42 @@ variable "repo_url" {
   type        = string
 }
 variable "vpc_id" {
-  description = "value"  
-  type = string
+  description = "value"
+  type        = string
 }
 variable "security_groups" {
   description = "Security group ID"
-  type = string
+  type        = string
 }
 variable "subnets" {
   description = "Subnets"
-  type = list
+  type        = list(any)
 }
 variable "efs_id" {
   description = "EFS ID"
-  type = string
+  type        = string
 }
 variable "fargate_pool_arn" {
   description = "Fargate target"
-  type = string
+  type        = string
+}
+variable "db_name" {
+  description = "Database name"
+  type        = string
+}
+variable "db_url_tpl" {
+  description = "Database host address"
+  type        = string
+}
+variable "db_password" {
+  description = "Database password"
+  type        = string
+}
+variable "db_user" {
+  description = "Database user"
+  type        = string
+}
+variable "log_group" {
+  description = "Log group name"
+  type        = string
 }

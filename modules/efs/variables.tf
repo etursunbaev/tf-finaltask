@@ -12,3 +12,7 @@ variable "subnets" {
   description = "Subnet ids"
   type        = list(any)
 }
+variable "efs_sg" {
+  description = "A list of up to 5 VPC security group IDs"
+  type        = list(any)
+}

@@ -49,7 +49,7 @@ resource "aws_internet_gateway" "this_igw" {
   )
 }
 
-resource "aws_route_table" "this_prt" {
+resource "aws_route_table" "public_rt" {
   count = var.create_vpc && length(var.public_subnets) > 0 ? 1 : 0
 
   vpc_id = aws_vpc.this_vpc.id
@@ -63,7 +63,7 @@ resource "aws_route_table" "this_prt" {
 resource "aws_route" "public_internet_gateway" {
   count = var.create_vpc && var.create_igw && length(var.public_subnets) > 0 ? 1 : 0
 
-  route_table_id         = aws_route_table.this_prt[0].id
+  route_table_id         = aws_route_table.public_rt[0].id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.this_igw[0].id
 
@@ -72,14 +72,14 @@ resource "aws_route" "public_internet_gateway" {
   }
 }
 
-resource "aws_route_table" "this_private_rt" {
+resource "aws_route_table" "private_rt" {
   count = var.create_vpc && length(var.private_subnets) > 0 ? 1 : 0
 
   vpc_id = aws_vpc.this_vpc.id
 
   tags = merge(
     {
-      "Name" = "private_rt"
+      "Name" = format("private_rt_%s", substr(element(var.azs, count.index), 9, 10))
     },
     var.additional_tags,
   )
@@ -87,10 +87,10 @@ resource "aws_route_table" "this_private_rt" {
 resource "aws_route_table_association" "public" {
   count          = length(aws_subnet.this_public.*.id)
   subnet_id      = element(aws_subnet.this_public.*.id, count.index)
-  route_table_id = aws_route_table.this_prt[0].id
+  route_table_id = aws_route_table.public_rt[0].id
 }
 resource "aws_route_table_association" "private" {
-  count          = length(aws_subnet.this_private.*.id)
-  subnet_id      = element(aws_subnet.this_private.*.id, count.index)
-  route_table_id = aws_route_table.this_private_rt[0].id
+  count          = length(concat(aws_subnet.this_private.*.id, aws_subnet.this_dbs.*.id))
+  subnet_id      = element(concat(aws_subnet.this_private.*.id, aws_subnet.this_dbs.*.id), count.index)
+  route_table_id = aws_route_table.private_rt[0].id
 }

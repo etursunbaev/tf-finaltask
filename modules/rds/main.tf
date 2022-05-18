@@ -1,6 +1,3 @@
-locals {
-  db_sg = data.aws_security_groups.this_sg.ids != [] ? data.aws_security_groups.this_sg.ids : [var.vpc_security_group_ids]
-}
 data "aws_subnets" "this_subnets" {
   filter {
     name   = "vpc-id"
@@ -14,13 +11,7 @@ data "aws_subnets" "this_subnets" {
   #   Name = "private_db*"
   # }
 }
-data "aws_security_groups" "this_sg" {
 
-  filter {
-    name   = "group-name"
-    values = ["mysql"]
-  }
-}
 resource "aws_db_subnet_group" "this_db_subnet" {
   name        = "ghost"
   description = "ghost database subnet group"
@@ -32,17 +23,17 @@ resource "aws_db_subnet_group" "this_db_subnet" {
 }
 resource "aws_db_instance" "this_db" {
   allocated_storage      = 20
-  identifier = "ghost"
+  identifier             = "ghost"
   engine                 = "mysql"
   engine_version         = "8.0"
   instance_class         = "db.t2.micro"
-  db_name                = "gh_db"
-  username               = "gh_user"
+  db_name                = var.db_name
+  username               = var.db_user
   password               = random_password.master_password.result
   storage_type           = "gp2"
-  vpc_security_group_ids = local.db_sg
+  vpc_security_group_ids = var.db_sg
   db_subnet_group_name   = aws_db_subnet_group.this_db_subnet.name
-  skip_final_snapshot  = true
+  skip_final_snapshot    = true
   tags = merge(var.additional_tags, {
     Name = "ghost"
     },

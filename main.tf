@@ -15,6 +15,11 @@ locals {
   private_subnets  = var.private_subnets
   database_subnets = var.database_subnets
   create_igw       = var.create_igw
+  db_name          = "gh_db"
+  db_user          = "gh_user"
+  prefix_name      = "cloudx"
+  app_name         = "ghost"
+  retention_period = 1
 }
 
 resource "tls_private_key" "generated" {
@@ -52,14 +57,21 @@ module "sg" {
   vpc_id           = module.vpc.vpc_id
   data_http_ip_url = var.data_http_ip_url
   additional_tags  = local.tags
+  depends_on = [
+    module.vpc
+  ]
 }
 
 module "rds" {
   source          = "./modules/rds"
   vpc_id          = module.vpc.vpc_id
   additional_tags = local.tags
+  db_name         = local.db_name
+  db_user         = local.db_user
+  db_sg           = [module.sg.mysql_sg]
   depends_on = [
-    module.vpc
+    module.vpc,
+    module.sg
   ]
 }
 
@@ -68,6 +80,11 @@ module "efs" {
   vpc_id          = module.vpc.vpc_id
   additional_tags = local.tags
   subnets         = module.vpc.private_subnets
+  efs_sg          = [module.sg.efs_sg]
+  depends_on = [
+    module.vpc,
+    module.sg
+  ]
 }
 
 module "alb" {
@@ -77,21 +94,17 @@ module "alb" {
   vpc_id          = module.vpc.vpc_id
   security_groups = module.sg.alb_sg
   subnets         = module.vpc.public_subnets
+  prefix_name     = local.prefix_name
+  alb_group       = var.alb_group
+  image_id = var.image_id
+  instance_type = var.instance_type
   depends_on = [
     module.vpc,
-    module.sg
+    module.sg,
+    module.asg
   ]
 }
-data "template_file" "user_data" {
-  template = filebase64("init.sh")
 
-  vars = {
-    db_url_tpl  = module.rds.db_instance_ip
-    db_password = module.rds.master_pwd
-    efs_id      = module.efs.efs_id
-    aws_region  = var.aws_region
-  }
-}
 module "asg" {
   source           = "./modules/asg"
   additional_tags  = local.tags
@@ -102,7 +115,12 @@ module "asg" {
   instance_profile = aws_iam_instance_profile.this_profile.arn
   security_groups  = [module.sg.ec2_pool_sg]
   subnets          = module.vpc.public_subnets
-  user_data        = data.template_file.user_data.rendered
+  db_host          = module.rds.db_instance_ip
+  db_password      = module.rds.master_pwd
+  db_name          = local.db_name
+  db_user          = local.db_user
+  aws_region       = var.aws_region
+  efs_id           = module.efs.efs_id
   depends_on = [
     aws_iam_instance_profile.this_profile,
     module.vpc,
@@ -113,68 +131,86 @@ module "asg" {
 }
 
 resource "aws_iam_instance_profile" "this_profile" {
-  name = "ghost_app"
+  name = "ghost_app_instance_profile"
   role = aws_iam_role.this_ecsInstanceRole.name
   tags = local.tags
 }
 
 resource "aws_iam_role" "this_ecsInstanceRole" {
-  name               = "ecsInstanceRole"
+  name               = "ghost-app-role"
   assume_role_policy = file("policies/ecsInstanceRoleAssumeRolePolicy.json")
   tags               = local.tags
 }
 
 resource "aws_iam_role_policy" "this_ecsInstanceRolePolicy" {
-  name   = "ecsInstanceRolePolicy"
+  name   = "ghost-app-role-policy"
   role   = aws_iam_role.this_ecsInstanceRole.id
   policy = file("policies/ecsInstancerolePolicy.json")
 }
 
-module "ecr" {
-  source = "./modules/ecr"
-}
+# module "ecr" {
+#   source = "./modules/ecr"
+# }
 
-module "ecs" {
-  source                  = "./modules/ecs"
-  environment             = var.environment
-  additional_tags         = local.tags
-  create_ecs              = true
-  launch_type             = "FARGATE"
-  repo_url                = module.ecr.repo_url
-  ecs_task_execution_role = aws_iam_role.this_ecsInstanceRole.arn
-  vpc_id                  = module.vpc.vpc_id
-  security_groups         = module.sg.fargate_pool_sg
-  subnets                 = module.vpc.private_subnets
-  efs_id                  = module.efs.efs_id
-  fargate_pool_arn        = module.alb.fargate_tgn
-  depends_on = [
-    module.ecr
-  ]
-}
+# module "ecs" {
+#   source                  = "./modules/ecs"
+#   environment             = var.environment
+#   additional_tags         = local.tags
+#   create_ecs              = true
+#   launch_type             = "FARGATE"
+#   repo_url                = module.ecr.repo_url
+#   ecs_task_execution_role = aws_iam_role.this_ecsInstanceRole.arn
+#   vpc_id                  = module.vpc.vpc_id
+#   security_groups         = module.sg.fargate_pool_sg
+#   subnets                 = module.vpc.private_subnets
+#   efs_id                  = module.efs.efs_id
+#   fargate_pool_arn        = module.alb.fargate_tgn
+#   db_url_tpl              = module.rds.db_instance_ip
+#   db_name                 = local.db_name
+#   db_user                 = local.db_user
+#   db_password             = module.rds.master_pwd
+#   log_group               = module.logs.log_group
+#   depends_on = [
+#     module.ecr,
+#     module.vpc,
+#     module.alb,
+#     module.sg,
+#     module.rds,
+#     module.efs,
+#     module.logs
+#   ]
+# }
 
-data "template_file" "image_push" {
-  template = file("scripts/image.sh")
-  vars = {
-    "repo_url"   = module.ecr.repo_url
-    "image_name" = "ghost"
-  }
-}
+# data "template_file" "image_push" {
+#   template = file("scripts/image.sh")
+#   vars = {
+#     "repo_url" = module.ecr.repo_url
+#   }
+# }
 
-resource "null_resource" "push" {
-  provisioner "local-exec" {
-    command = data.template_file.image_push.rendered
-  }
-  depends_on = [
-    module.ecr
-  ]
-}
-module "vpce" {
-  source        = "./modules/vpce"
-  vpc_id        = module.vpc.vpc_id
-  vpce_sg       = [module.sg.vpce_sg]
-  private_rt_id = module.vpc.private_rt
-  depends_on = [
-    module.vpc,
-    module.sg
-  ]
-}
+# resource "null_resource" "push" {
+#   provisioner "local-exec" {
+#     command = data.template_file.image_push.rendered
+#   }
+#   depends_on = [
+#     module.ecr
+#   ]
+# }
+# module "vpce" {
+#   source        = "./modules/vpce"
+#   vpc_id        = module.vpc.vpc_id
+#   vpce_sg       = [module.sg.vpce_sg]
+#   private_rt_id = module.vpc.private_rt
+#   subnets       = module.vpc.public_subnets
+#   depends_on = [
+#     module.vpc,
+#     module.sg
+#   ]
+# }
+# module "logs" {
+#   source           = "./modules/logs"
+#   additional_tags  = local.tags
+#   prefix_name      = local.prefix_name
+#   app_name         = local.app_name
+#   retention_period = local.retention_period
+# }

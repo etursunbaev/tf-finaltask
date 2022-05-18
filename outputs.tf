@@ -62,9 +62,13 @@ output "efs_id" {
   description = "EFS ID"
   value       = module.efs.efs_id
 }
-output "tgs" {
+output "ec2_tgn" {
   description = "Target Groups ARN"
-  value       = module.alb.*.tgs
+  value       = module.alb.ec2_tgn
+}
+output "fargate_tgn" {
+  description = "Target Groups ARN"
+  value       = module.alb.fargate_tgn
 }
 output "alb" {
   description = "ALB ARN"
@@ -82,10 +86,15 @@ output "launch_template" {
   description = "Launch template ARN"
   value       = module.asg.launch_template
 }
-output "repo_url" {
-  description = "The URL of the repository"
-  value       = module.ecr.repo_url
+# output "repo_url" {
+#   description = "The URL of the repository"
+#   value       = module.ecr.repo_url
+# }
+output "instance_id" {
+  description = "Instance ID"
+  value       = module.alb.instance_id
 }
-output "test" {
-  value = concat(module.vpc.public_subnets, module.vpc.private_subnets)
+output "instance_ip" {
+  description = "Instance IP"
+  value       = module.alb.public_ip
 }

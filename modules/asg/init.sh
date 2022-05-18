@@ -3,9 +3,9 @@
 export HOME="/root"
 SSM_DB_PASSWORD="/ghost/dbpassw"
 GHOST_PACKAGE="ghost-4.12.1.tgz"
-DB_URL=${db_url_tpl}
-DB_USER="gh_user"
-DB_NAME="gh_db"
+DB_URL=${db_host}
+DB_USER=${db_user}
+DB_NAME=${db_name}
 
 # REGION=$(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone | sed 's/[a-z]$//')
 # DB_PASSWORD=$(aws ssm get-parameter --name $SSM_DB_PASSWORD --query Parameter.Value --with-decryption --region $REGION --output text)

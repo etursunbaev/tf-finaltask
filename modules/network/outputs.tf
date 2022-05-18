@@ -16,11 +16,11 @@ output "database_subnets" {
 }
 output "public_rt" {
   description = "Public Route Table ID"
-  value       = aws_route_table.this_prt[0].id
+  value       = aws_route_table.public_rt[0].id
 }
 output "private_rt" {
   description = "Private Route Table ID"
-  value       = aws_route_table.this_private_rt[0].id
+  value       = aws_route_table.private_rt[0].id
 }
 output "igw" {
   description = "Internet Gateway ID"

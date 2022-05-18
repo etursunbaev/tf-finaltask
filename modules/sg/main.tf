@@ -27,6 +27,7 @@ resource "aws_security_group" "ec2_pool" {
     protocol    = "tcp"
     cidr_blocks = [data.aws_vpc.this_vpc.cidr_block]
   }
+
   egress {
     from_port   = 0
     to_port     = 65535
@@ -133,6 +134,13 @@ resource "aws_security_group" "this_vpce" {
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = [data.aws_vpc.this_vpc.cidr_block]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "all"
+    description = "Open internet"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 resource "aws_security_group_rule" "extra_ec2_rule" {

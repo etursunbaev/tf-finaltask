@@ -77,3 +77,8 @@ variable "image_id" {
   description = "The AMI ID."
   type        = string
 }
+variable "alb_group" {
+  description = "Map of project names to configuration."
+  type        = map(any)
+  default     = {}
+}

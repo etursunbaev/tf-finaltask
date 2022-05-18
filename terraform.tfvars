@@ -13,4 +13,14 @@ database_subnets = ["10.10.20.0/24", "10.10.21.0/24", "10.10.22.0/24"]
 create_igw       = true
 azs              = ["us-east-1a", "us-east-1b", "us-east-1c"]
 data_http_ip_url = "http://ifconfig.io/ip"
-image_id         = "ami-03ededff12e34e59e"
+image_id         = "ami-0022f774911c1d690"
+alb_group = {
+  target-1 = {
+    name        = "ghost-ec2"
+    target_type = "instance"
+  },
+  target-2 = {
+    name        = "ghost-fargate"
+    target_type = "ip"
+  }
+}
